@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+require('../db/mongo')
 require('dotenv').config();
 
 
@@ -8,12 +9,9 @@ require('dotenv').config();
 
 
 
-
-
+const IMAGES_FOLDER = String(process.env.IMAGES_FOLDER);
 app.use(cors());
 app.use(express.json());
-app.use('/' + process.env.IMAGES_FOLDER_PATH , express.static('uploads'));
+app.use("/" + process.env.IMAGES_PUBLIC_URL, express.static(IMAGES_FOLDER));
 
-
-
-module.exports = {app};
+module.exports = { app };
