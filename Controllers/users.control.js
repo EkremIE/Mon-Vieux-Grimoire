@@ -1,74 +1,96 @@
 const {User} = require('../models/User');
 const bcrypt = require('bcrypt');
 const express = require('express');
+const jwt = require('jsonwebtoken');
 
-async function signUP (req, res) {
-    console.log("signup:",req.body);
+async function signUp(req, res) {
     const email = req.body.email;
     const password = req.body.password;
-
-    const userInDB = await User.findOne({
+    if (email == null || password == null) {
+      res.status(400).send("Email and password are required");
+      return;
+    }
+  
+    try {
+      const userInDb = await User.findOne({
         email: email
-    });
-    if (userInDB != null) {
+      });
+      if (userInDb != null) {
         res.status(400).send("Email already exists");
         return;
+      }
+      const user = {
+        email,
+        password: hashPassword(password)
+      };
+      await User.create(user);
+      res.send("Sign up");
+    } catch (e) {
+      console.error(e);
+      res.status(500).send("Something went wrong");
     }
-    const user = {
-        email: email,
-        password: hashPassword(password) // TODO: hash password
+  }
+
+
+  async function login(req, res) {
+    const body = req.body;
+    if (body.email == null || body.password == null) {
+      res.status(400).send("Email and password are required");
+      return;
     }
     try {
-        await User.create(user);
-    }
-    catch (e) {
-        console.error(e);
-        res.status(500).send("Internal error");
-        return;
-    }
-    res.send("SignUP");
-} 
-
-
-
-async function login (req, res) {
-    console.log("login:",req.body);
-    const body = req.body;
-
-    const userInDB = await User.findOne({
+      const userInDb = await User.findOne({
         email: body.email
+      });
+      if (userInDb == null) {
+        res.status(401).send("Wrong credentials");
+        return;
+      }
+      const passwordInDb = userInDb.password;
+      if (!isPasswordCorrect(req.body.password, passwordInDb)) {
+        res.status(401).send("Wrong credentials");
+        return;
+      }
+  
+      res.send({
+        userId: userInDb._id,
+        token: generateToken(userInDb._id)
+      });
+    } catch (e) {
+      console.error(e);
+      res.status(500).send("Something went wrong");
+    }
+  }
+
+  function generateToken(idInDb) {
+    const payload = {
+      userId: idInDb
+    };
+    const jwtSecret = String(process.env.JWT_SECRET);
+    const token = jwt.sign(payload, jwtSecret, {
+      expiresIn: "1d"
     });
-    if (userInDB == null) {
-        res.status(401).send("Wrong email")
-        return;
-    }
+    return token;
+  }
 
 
-    const passwordInDB = userInDB.password;
-    if (!isPasswordCorrect(req.body.password, passwordInDB)) {
-        res.status(401).send("Wrong password")
-        return;
-    }
-    res.send({
-        userId: userInDB._id,
-        token: "token"
-    })
-}
 
-function hashPassword(password) {
+
+  function hashPassword(password) {
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
     return hash;
-}
-
-function isPasswordCorrect(password, hash) {
+  }
+  
+  function isPasswordCorrect(password, hash) {
     return bcrypt.compareSync(password, hash);
-}
+  }
+  
 
 const usersRouter = express.Router();
-usersRouter.post("/signup", signUP);
+usersRouter.post("/signup", signUp);
 usersRouter.post("/login", login);
 
 
 
-module.exports = {usersRouter};
+module.exports = { usersRouter };

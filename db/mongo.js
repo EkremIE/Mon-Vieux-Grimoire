@@ -1,12 +1,8 @@
 require('dotenv').config();
-
 const mongoose = require("mongoose");  
-
 
 const DB_URL =`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_DOMAIN}`;
 console.log("DB_URL:",DB_URL);
-
-
 
 async function connect() {
     try {
@@ -20,7 +16,6 @@ async function connect() {
 
 connect();
 
-module.exports = {mongoose};
 
 
 
