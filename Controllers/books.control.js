@@ -16,7 +16,8 @@ booksRouter.post("/:id/rating", checkToken, postRating);
 async function postRating(req, res) {
   const id = req.params.id;
   if (id == null || id == "undefined") {
-    res.status(400).send("Book id is missing");
+    res.status(400).json({ error: "Book id is missing" });
+
     return;
   }
   const rating = req.body.rating;
@@ -35,9 +36,10 @@ async function postRating(req, res) {
     }
     const newRating = { userId, grade: rating };
     ratingsInDb.push(newRating);
+
     book.averageRating = calculateAverageRating(ratingsInDb);
     await book.save();
-    res.send("Rating posted");
+    res.json({ message: "Rating posted", _id: id });
   } catch (e) {
     console.error(e);
     res.status(500).send("Something went wrong:" + e.message);
