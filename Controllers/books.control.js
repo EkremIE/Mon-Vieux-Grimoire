@@ -15,11 +15,11 @@ booksRouter.post("/:id/rating", checkToken, postRating);
 
 async function postRating(req, res) {
   const id = req.params.id;
-  if (id == null || id == "undefined") {
+  if (!id || id === "undefined") {
     res.status(400).json({ error: "Book id is missing" });
-
     return;
   }
+  
   const rating = req.body.rating;
   const userId = req.tokenPayload.userId;
   try {
